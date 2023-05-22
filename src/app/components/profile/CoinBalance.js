@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "react-toastify";
 import { ethers } from "ethers";
 import {
   useAccount,
@@ -15,12 +16,17 @@ import dispenserABI from "../../abi/dispenser.json";
 
 export function CoinBalance({ profAddress }) {
   // state
+  const [counter, setCounter] = useState(0);
   const [claimId, setClaimId] = useState(0);
+  const [tokenId, setTokenId] = useState(999);
   const [signature, setSignature] = useState("");
+  const [amount, setAmount] = useState("0");
+  const [distributed, setDistributed] = useState("0");
+  const [isEnabled, setIsEnabled] = useState(false);
 
-  const coinContract = {
-    address: process.env.coinAddress,
-    abi: coinABI,
+  const dispenserContract = {
+    address: process.env.dispenserAddress,
+    abi: dispenserABI,
   };
 
   const nftContract = {
@@ -28,31 +34,53 @@ export function CoinBalance({ profAddress }) {
     abi: nftABI,
   };
 
-  // state
-  const [counter, setCounter] = useState(0);
-
   // wagmi hooks
   const { isConnected, address } = useAccount();
-  const { data } = useContractReads({
+  const { data, isLoading } = useContractReads({
     contracts: [
       {
-        ...coinContract,
-        functionName: "balanceOf",
-        args: [profAddress],
+        ...dispenserContract,
+        functionName: "totalClaimed",
+        args: [tokenId],
       },
       {
         ...nftContract,
         functionName: "tokenOfOwnerByIndex",
         args: [profAddress, 0],
       },
+      {
+        ...nftContract,
+        functionName: "balanceOf",
+        args: [profAddress],
+      },
     ],
+    watch: true,
   });
+
+  // const convertedAmount = parseInt(
+  //   ethers
+  //     .parseEther((parseInt(amount) - parseInt(data[0].result.toString())).toString())
+  //     .toString()
+  // );
+  const convertedAmount = parseInt(amount);
+
+  console.log(
+    claimId,
+    tokenId,
+    parseInt(ethers.parseEther(convertedAmount.toString()).toString()),
+    signature
+  );
   const { config, status: prepStatus } = usePrepareContractWrite({
     address: process.env.dispenserAddress, // minter address
     abi: dispenserABI,
     functionName: "claimRewards",
-    args: [claimId, data[1].result.toString(), counter, signature],
-    enabled: claimId > 0 && signature !== "" && counter > 0 ? true : false,
+    args: [
+      claimId,
+      tokenId,
+      parseInt(ethers.parseEther(convertedAmount.toString()).toString()),
+      signature,
+    ],
+    enabled: isEnabled,
     overrides: {
       from: address,
       gasLimit: 1000000,
@@ -82,41 +110,75 @@ export function CoinBalance({ profAddress }) {
     // set the counter
 
     const body = {
-      nftId: parseInt(data[1].result.toString()),
-      reward: ethers.parseEther(counter.toString()),
+      nftId: parseInt(
+        parseInt(data[2].result.toString()) > 0 ? data[1].result.toString() : ""
+      ),
+      reward: ethers.parseEther("1.0").toString(),
     };
 
-    console.log(body);
-    const headers = {
-      "Content-Type": "application/json", // Example header
-    };
+    // console.log(body);
+    if (body.nftId !== "") {
+      const headers = {
+        "Content-Type": "application/json", // Example header
+      };
 
-    const response = await fetch(
-      `${process.env.nftAPI}/add_reward`,
-      {
+      const response = await fetch(`${process.env.nftAPI}/add_reward`, {
         method: "POST",
         headers,
-        body: JSON.stringify(data),
+        body: JSON.stringify(body),        
+      });
+
+      if (response.status === 200) {
+        const output = response.json();
+        await output.then((data) => {
+          toastHandler(false, `Coin Earned`);
+        });
+        fetchUndistributedRewards();
       }
-    );
-
-    if (response.status === 200) {
-      const output = response.json();
-      await output.then(data => toastHandler(false, data.message));
+      // fetchClaimableInfo();
     }
-
-    fetchClaimableInfo();
   };
 
   const fetchClaimableInfo = useCallback(async () => {
-    const response = await fetch(
-      `${process.env.nftAPI}/get_accumulated_rewards?nftId=${data[1].result.toString()}`
-    );
-    const output = await response.json();
-    const data = JSON.parse(output.item.result);        
-    setClaimId(data.claimId);
-    setSignature(data.signature);
-  }, [])
+    if (parseInt(data[2].result.toString()) > 0) {
+      const response = await fetch(
+        `${
+          process.env.nftAPI
+        }/user_token_reward_claim_data?nftId=${data[1].result.toString()}`,
+        // {next: { revalidate: 10 }}
+      );
+      if ((await response.status) === 200) {
+        const output = await response.json();
+        const details = await output.item.Value;
+        const mintableRewards =
+          parseInt(ethers.formatEther(details.accumulatedAmount)) -
+          parseFloat(data[0].result.toString());
+
+        // console.log(details.accumulatedAmount);
+
+        setClaimId(details.claimId);
+        setSignature(details.signature);
+        setAmount(mintableRewards);
+        setTokenId(parseInt(data[1].result.toString()));
+      }
+    }
+  }, []);
+
+  const fetchUndistributedRewards = useCallback(async () => {
+    if (parseInt(data[2].result.toString()) > 0) {
+      const response = await fetch(
+        `${
+          process.env.nftAPI
+        }/get_undistributed_user_rewards?nftId=${data[1].result.toString()}`,
+        // {next: { revalidate: 10 }}
+      );
+
+      if ((await response.status) === 200) {
+        const output = await response.json();
+        setDistributed(ethers.formatEther(output.updatedReward).toString());
+      }
+    }
+  });
 
   const updateClaimableRewardsOfUser = () => {
     // call an api post if the account is not existing
@@ -151,40 +213,87 @@ export function CoinBalance({ profAddress }) {
 
   useEffect(() => {
     reset();
-    prepStatus === "success" && write?.();
-  }, [prepStatus]);
+    console.log(prepStatus);
+    console.log(writeStatus);
+    console.log(isEnabled);
+    // isEnabled == true && write?.();
 
-  return (
-    <div className="mx-2 py-4 rounded bg-white text-black border rounded shadow">
-      <div className="flex flex-col flex-wrap px-4">
-        <div className="py-5">
-          <div className="px-5 border-b border-slate-200 pb-4 mb-4">
-            <h1 className="lg:text-3xl md:text-2xl text-xl font-bold text-slate-500">
-              Coin Details
-            </h1>
-          </div>
-          <div className="flex lg:flex-row flex-col">
-            <div className="flex-1">
-              <p>Claimable Coins: {counter}</p>
-              <p>Coin Balance: {data[0].result.toString()}</p>
+    fetchClaimableInfo();
+    fetchUndistributedRewards();
+
+    // Schedule the fetch operation every 60 seconds
+    const intervalId = setInterval(() => {
+      fetchClaimableInfo();
+      fetchUndistributedRewards();
+    }, 10000);
+
+    // Clean up the interval when the component unmounts
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [isEnabled]);
+  // prepStatus
+
+  if (!isLoading) {
+    return (
+      <div className="mx-2 py-4 rounded bg-white text-black border rounded shadow">
+        <div className="flex flex-col flex-wrap px-4">
+          <div className="py-5">
+            <div className="px-5 border-b border-slate-200 pb-4 mb-4">
+              <h1 className="lg:text-3xl md:text-2xl text-xl font-bold text-slate-500">
+                Coin Details
+              </h1>
             </div>
-            <div className="flex-1">
-              <a
-                className="m-5 p-4 rounded-md border bg-indigo-500 text-white cursor-pointer"
-                onClick={() => setCounter(counter + 1)}
-              >
-                Click to earn
-              </a>
-              <a
-                className="m-5 p-4 rounded-md border bg-green-500 text-white cursor-pointer"
-                onClick={() => getClaimableRewards()}
-              >
-                Claim Rewards
-              </a>
-            </div>
+            {parseInt(data[2].result.toString()) > 0 ? (
+              <div className="flex lg:flex-row flex-col">
+                <div className="flex-1">
+                  <p>
+                    Claimable Coins:{" "}
+                    {parseInt(amount) -
+                      parseInt(
+                        ethers.formatEther(data[0].result.toString()).toString()
+                      )}
+                  </p>
+                  <p>Undistributed: {distributed}</p>
+                  <p>
+                    User Token Balance:{" "}
+                    {ethers.formatEther(data[0].result.toString())}
+                  </p>
+                </div>
+                <div className="flex-1">
+                  <a
+                    className="m-5 p-4 rounded-md border bg-indigo-500 text-white cursor-pointer"
+                    onClick={() => {
+                      setIsEnabled(true)
+                      getClaimableRewards()
+                    }}
+                  >
+                    Click to earn
+                  </a>
+                  {parseInt(amount) -
+                    parseInt(
+                      ethers.formatEther(data[0].result.toString()).toString()
+                    ) >
+                  0 ? (
+                    <a
+                      className="m-5 p-4 rounded-md border bg-green-500 text-white cursor-pointer"
+                      onClick={() => {                        
+                        write()                        
+                      }}
+                    >
+                      Claim Rewards
+                    </a>
+                  ) : (
+                    ""
+                  )}
+                </div>
+              </div>
+            ) : (
+              ""
+            )}
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 }

@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useAccount } from "wagmi";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
 import { BellIcon, MenuIcon, XIcon, CashIcon } from "@heroicons/react/outline";
 
-import { Web3Button } from '@web3modal/react';
+import { Web3Button } from "@web3modal/react";
 
 const navigation = [
   { name: "Home", href: "/dashboard", current: false },
   { name: "NFT Rewards", href: "/rewards/nft", current: false },
-  { name: "Coin Rewards", href: "/rewards/coin", current: false },
+  { name: "Profile", href: "/profile", current: false },
 ];
 
 function classNames(...classes) {
@@ -17,6 +18,8 @@ function classNames(...classes) {
 }
 
 export function Navigation() {
+  const { address } = useAccount();
+
   return (
     <Disclosure as="nav" className="bg-indigo-800">
       {({ open }) => (
@@ -41,7 +44,14 @@ export function Navigation() {
                 <div className="hidden sm:block sm:ml-6">
                   <div className="flex space-x-4 py-3">
                     {navigation.map((item) => (
-                      <Link key={item.name} href={item.href}>
+                      <Link
+                        key={item.name}
+                        href={
+                          item.name === "Profile"
+                            ? `${item.href}/${address}`
+                            : item.href
+                        }
+                      >
                         <span
                           className={classNames(
                             item.current

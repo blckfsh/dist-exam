@@ -1,14 +1,17 @@
 "use client";
+import { useEffect, useState } from "react";
 import { useAccount, useContractReads } from "wagmi";
 
 import nftABI from "../../abi/nft.json";
 
 export function ViewNfts({ profAddress }) {
+  // state
+  const [tokenId, setTokenId] = useState(0);
+
   const nftContract = {
     address: process.env.nftAddress,
     abi: nftABI,
   };
-
 
   // wagmi hooks
   const { isConnected, address } = useAccount();
@@ -24,10 +27,37 @@ export function ViewNfts({ profAddress }) {
         functionName: "balanceOf",
         args: [profAddress],
       },
+      {
+        ...nftContract,
+        functionName: "tokenURI",
+        args: [tokenId],
+      },
     ],
   });
 
-  // console.log(data);
+  const getNftImage = async () => {
+    console.log(data);
+    console.log(tokenId);
+
+    let metadata_url;
+    const prefix = "ipfs://";
+    const metadata = data[2].result.toString();
+    if (metadata.startsWith(prefix))
+      metadata_url = `https://cloudflare-ipfs.com/ipfs/${metadata.slice(
+        prefix.length
+      )}.json`;
+
+    const response = await fetch(metadata_url, {
+      method: "GET",
+      mode: "no-cors",
+    });
+    console.log(response);
+  };
+
+  useEffect(() => {
+    setTokenId(parseInt(data[0].result.toString()));
+    // getNftImage(); // returning an error
+  }, []);
 
   if (!isLoading) {
     return (
@@ -40,7 +70,7 @@ export function ViewNfts({ profAddress }) {
               </h1>
             </div>
             <div className="rounded-lg">
-              { parseInt(data[1].result.toString()) > 0 ? (
+              {parseInt(data[1].result.toString()) > 0 ? (
                 <div className="flex flex-row flex-wrap justify-start">
                   <div className="bg-slate-100 rounded-xl">
                     <div className="flex items-center text-center bg-slate-500 rounded-t-xl w-96 h-28">

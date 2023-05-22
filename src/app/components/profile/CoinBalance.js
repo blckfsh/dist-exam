@@ -34,6 +34,11 @@ export function CoinBalance({ profAddress }) {
     abi: nftABI,
   };
 
+  const coinContract = {
+    address: process.env.coinAddress,
+    abi: coinABI,
+  };
+
   // wagmi hooks
   const { isConnected, address } = useAccount();
   const { data, isLoading } = useContractReads({
@@ -53,6 +58,11 @@ export function CoinBalance({ profAddress }) {
         functionName: "balanceOf",
         args: [profAddress],
       },
+      {
+        ...coinContract,
+        functionName: "balanceOf",
+        args: [profAddress],
+      },
     ],
     watch: true,
   });
@@ -64,12 +74,12 @@ export function CoinBalance({ profAddress }) {
   // );
   const convertedAmount = parseInt(amount);
 
-  console.log(
-    claimId,
-    tokenId,
-    parseInt(ethers.parseEther(convertedAmount.toString()).toString()),
-    signature
-  );
+  // console.log(
+  //   claimId,
+  //   tokenId,
+  //   parseInt(ethers.parseEther(convertedAmount.toString()).toString()),
+  //   signature
+  // );
   const { config, status: prepStatus } = usePrepareContractWrite({
     address: process.env.dispenserAddress, // minter address
     abi: dispenserABI,
@@ -213,9 +223,9 @@ export function CoinBalance({ profAddress }) {
 
   useEffect(() => {
     reset();
-    console.log(prepStatus);
-    console.log(writeStatus);
-    console.log(isEnabled);
+    // console.log(prepStatus);
+    // console.log(writeStatus);
+    // console.log(isEnabled);
     // isEnabled == true && write?.();
 
     fetchClaimableInfo();
@@ -254,10 +264,14 @@ export function CoinBalance({ profAddress }) {
                         ethers.formatEther(data[0].result.toString()).toString()
                       )}
                   </p>
-                  <p>Undistributed: {distributed}</p>
+                  <p>Undistributed User Rewards: {distributed}</p>
                   <p>
-                    User Token Balance:{" "}
+                    Accumulated Rewards on this NFT:{" "}
                     {ethers.formatEther(data[0].result.toString())}
+                  </p>
+                  <p>
+                  User Reward Token Balance:{" "}
+                    {ethers.formatEther(data[3].result.toString())}
                   </p>
                 </div>
                 <div className="flex-1">

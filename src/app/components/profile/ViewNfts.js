@@ -55,7 +55,7 @@ export function ViewNfts({ profAddress }) {
   };
 
   useEffect(() => {
-    setTokenId(parseInt(data[0].result.toString()));
+    if (data[0].result) setTokenId(parseInt(data[0].result.toString()));
     // getNftImage(); // returning an error
   }, []);
 
@@ -70,7 +70,7 @@ export function ViewNfts({ profAddress }) {
               </h1>
             </div>
             <div className="rounded-lg">
-              {parseInt(data[1].result.toString()) > 0 ? (
+              {data[1].result ? parseInt(data[1].result.toString()) > 0 ? (
                 <div className="flex flex-row flex-wrap justify-start">
                   <div className="bg-slate-100 rounded-xl">
                     <div className="flex items-center text-center bg-slate-500 rounded-t-xl w-96 h-28">
@@ -87,7 +87,7 @@ export function ViewNfts({ profAddress }) {
                 </div>
               ) : (
                 ""
-              )}
+              ): "-"}
             </div>
           </div>
         </div>

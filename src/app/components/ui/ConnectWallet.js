@@ -8,7 +8,7 @@ export function ConnectWallet() {
           onClick={() => console.log("Shit Happens")}
         >
           <span>
-            <CashIcon className="h-6 w-6 mr-2" aria-hidden="true" />
+            
           </span>
           Connect a wallet
         </button>

@@ -1,4 +1,5 @@
 "use client";
+import ClientOnly from "@/app/clientOnly";
 import Link from "next/link";
 
 const users = [
@@ -24,31 +25,33 @@ export function Users() {
             </h1>
           </div>
           <div className="rounded-lg">
-            <table className="table-auto w-full text-center lg:table hidden">
-              <thead>
-                <tr className="border-b-2">
-                  <th className="py-4">Address</th>
-                  <th className="py-4">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user, index) => {
-                  return (
-                    <tr key={index} className="border-b-2">
-                      <td>{user.wallet}</td>
-                      <td>
-                        <Link
-                          className="pointer text-indigo-400 font-bold"
-                          href={`/profile/${user.wallet}`}
-                        >
-                          View
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}                
-              </tbody>
-            </table>
+            <ClientOnly>
+              <table className="table-auto w-full text-center lg:table hidden">
+                <thead>
+                  <tr className="border-b-2">
+                    <th className="py-4">Address</th>
+                    <th className="py-4">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user, index) => {
+                    return (
+                      <tr key={index} className="border-b-2">
+                        <td>{user.wallet}</td>
+                        <td>
+                          <Link
+                            className="pointer text-indigo-400 font-bold"
+                            href={`/profile/${user.wallet}`}
+                          >
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </ClientOnly>
           </div>
         </div>
       </div>

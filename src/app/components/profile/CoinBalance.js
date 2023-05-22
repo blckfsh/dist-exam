@@ -135,7 +135,7 @@ export function CoinBalance({ profAddress }) {
       const response = await fetch(`${process.env.nftAPI}/add_reward`, {
         method: "POST",
         headers,
-        body: JSON.stringify(body),        
+        body: JSON.stringify(body),
       });
 
       if (response.status === 200) {
@@ -154,7 +154,7 @@ export function CoinBalance({ profAddress }) {
       const response = await fetch(
         `${
           process.env.nftAPI
-        }/user_token_reward_claim_data?nftId=${data[1].result.toString()}`,
+        }/user_token_reward_claim_data?nftId=${data[1].result.toString()}`
         // {next: { revalidate: 10 }}
       );
       if ((await response.status) === 200) {
@@ -179,7 +179,7 @@ export function CoinBalance({ profAddress }) {
       const response = await fetch(
         `${
           process.env.nftAPI
-        }/get_undistributed_user_rewards?nftId=${data[1].result.toString()}`,
+        }/get_undistributed_user_rewards?nftId=${data[1].result.toString()}`
         // {next: { revalidate: 10 }}
       );
 
@@ -254,56 +254,62 @@ export function CoinBalance({ profAddress }) {
                 Coin Details
               </h1>
             </div>
-            {parseInt(data[2].result.toString()) > 0 ? (
-              <div className="flex lg:flex-row flex-col">
-                <div className="flex-1">
-                  <p>
-                    Claimable Coins:{" "}
+            {data[2].result ? (
+              parseInt(data[2].result.toString()) > 0 ? (
+                <div className="flex lg:flex-row flex-col">
+                  <div className="flex-1">
+                    <p>
+                      Claimable Coins:{" "}
+                      {parseInt(amount) -
+                        parseInt(
+                          ethers
+                            .formatEther(data[0].result.toString())
+                            .toString()
+                        )}
+                    </p>
+                    <p>Undistributed User Rewards: {distributed}</p>
+                    <p>
+                      Accumulated Rewards on this NFT:{" "}
+                      {ethers.formatEther(data[0].result.toString())}
+                    </p>
+                    <p>
+                      User Reward Token Balance:{" "}
+                      {ethers.formatEther(data[3].result.toString())}
+                    </p>
+                  </div>
+                  <div className="flex-1">
+                    <a
+                      className="m-5 p-4 rounded-md border bg-indigo-500 text-white cursor-pointer"
+                      onClick={() => {
+                        setIsEnabled(true);
+                        getClaimableRewards();
+                      }}
+                    >
+                      Click to earn
+                    </a>
                     {parseInt(amount) -
                       parseInt(
                         ethers.formatEther(data[0].result.toString()).toString()
-                      )}
-                  </p>
-                  <p>Undistributed User Rewards: {distributed}</p>
-                  <p>
-                    Accumulated Rewards on this NFT:{" "}
-                    {ethers.formatEther(data[0].result.toString())}
-                  </p>
-                  <p>
-                  User Reward Token Balance:{" "}
-                    {ethers.formatEther(data[3].result.toString())}
-                  </p>
+                      ) >
+                    0 ? (
+                      <a
+                        className="m-5 p-4 rounded-md border bg-green-500 text-white cursor-pointer"
+                        onClick={() => {
+                          write();
+                        }}
+                      >
+                        Claim Rewards
+                      </a>
+                    ) : (
+                      ""
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <a
-                    className="m-5 p-4 rounded-md border bg-indigo-500 text-white cursor-pointer"
-                    onClick={() => {
-                      setIsEnabled(true)
-                      getClaimableRewards()
-                    }}
-                  >
-                    Click to earn
-                  </a>
-                  {parseInt(amount) -
-                    parseInt(
-                      ethers.formatEther(data[0].result.toString()).toString()
-                    ) >
-                  0 ? (
-                    <a
-                      className="m-5 p-4 rounded-md border bg-green-500 text-white cursor-pointer"
-                      onClick={() => {                        
-                        write()                        
-                      }}
-                    >
-                      Claim Rewards
-                    </a>
-                  ) : (
-                    ""
-                  )}
-                </div>
-              </div>
+              ) : (
+                ""
+              )
             ) : (
-              ""
+              "-"
             )}
           </div>
         </div>

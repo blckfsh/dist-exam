@@ -5,30 +5,31 @@ import { Inter } from "next/font/google";
 import { Navigation } from "./components/ui/Navigation";
 
 // import core & vendor packages below
-import "react-toastify/dist/ReactToastify.css";
-import { ToastContainer } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
+// import { ToastContainer } from "react-toastify";
+import RootProvider from "./providers";
 
-// import web3modal v2 packages below
-import {
-  EthereumClient,
-  w3mConnectors,
-  w3mProvider,
-} from "@web3modal/ethereum";
-import { Web3Modal } from '@web3modal/react'
-import { configureChains, createConfig, WagmiConfig } from 'wagmi'
-import { arbitrum, mainnet, polygon, bsc, sepolia } from "wagmi/chains";
+// // import web3modal v2 packages below
+// import {
+//   EthereumClient,
+//   w3mConnectors,
+//   w3mProvider,
+// } from "@web3modal/ethereum";
+// import { Web3Modal } from '@web3modal/react'
+// import { configureChains, createConfig, WagmiConfig } from 'wagmi'
+// import { arbitrum, mainnet, polygon, bsc, sepolia } from "wagmi/chains";
 
-// web3modal config
-const chains = [arbitrum, mainnet, polygon, bsc, sepolia];
-const projectId = "33dcd74ae36c05bc526d6527349b439b";
-const { publicClient } = configureChains(chains, [w3mProvider({ projectId })]);
+// // web3modal config
+// const chains = [arbitrum, mainnet, polygon, bsc, sepolia];
+// const projectId = "33dcd74ae36c05bc526d6527349b439b";
+// const { publicClient } = configureChains(chains, [w3mProvider({ projectId })]);
 
-const wagmiConfig = createConfig({
-  autoConnect: true,
-  connectors: w3mConnectors({ projectId, version: 1, chains }),
-  publicClient
-})
-const ethereumClient = new EthereumClient(wagmiConfig, chains)
+// const wagmiConfig = createConfig({
+//   autoConnect: true,
+//   connectors: w3mConnectors({ projectId, version: 1, chains }),
+//   publicClient
+// })
+// const ethereumClient = new EthereumClient(wagmiConfig, chains)
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -41,15 +42,17 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <WagmiConfig config={wagmiConfig}>
-          {/* Navigation Section */}
+        <RootProvider>
           <Navigation />
-          {/* Main Body */}
+          {children}
+        </RootProvider>
+        {/* <WagmiConfig config={wagmiConfig}>
+          <Navigation />
           <main>{children}</main>
           <ToastContainer />
         </WagmiConfig>
 
-        <Web3Modal projectId={projectId} ethereumClient={ethereumClient} />        
+        <Web3Modal projectId={projectId} ethereumClient={ethereumClient} />*/}
       </body>
     </html>
   );

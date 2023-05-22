@@ -6,6 +6,7 @@ import { Disclosure, Menu, Transition } from "@headlessui/react";
 import { BellIcon, MenuIcon, XIcon, CashIcon } from "@heroicons/react/outline";
 
 import { Web3Button } from "@web3modal/react";
+import ClientOnly from "@/app/clientOnly";
 
 const navigation = [
   { name: "Home", href: "/dashboard", current: false },
@@ -43,39 +44,42 @@ export function Navigation() {
                 </div>
                 <div className="hidden sm:block sm:ml-6">
                   <div className="flex space-x-4 py-3">
-                    {navigation.map((item) => (
-                      <Link
-                        key={item.name}
-                        href={
-                          item.name === "Profile"
-                            ? `${item.href}/${address}`
-                            : item.href
-                        }
-                      >
-                        <span
-                          className={classNames(
-                            item.current
-                              ? "bg-indigo-900 text-white"
-                              : "text-indigo-300 hover:bg-indigo-700 hover:text-white",
-                            "px-3 py-2 rounded-md text-sm font-medium"
-                          )}
-                          aria-current={item.current ? "page" : undefined}
+                    <ClientOnly>
+                      {navigation.map((item) => (
+                        <Link
+                          key={item.name}
+                          href={
+                            item.name === "Profile"
+                              ? `${item.href}/${address}`
+                              : item.href
+                          }
                         >
-                          {item.name}
-                        </span>
-                      </Link>
-                    ))}
+                          <span
+                            className={classNames(
+                              item.current
+                                ? "bg-indigo-900 text-white"
+                                : "text-indigo-300 hover:bg-indigo-700 hover:text-white",
+                              "px-3 py-2 rounded-md text-sm font-medium"
+                            )}
+                            aria-current={item.current ? "page" : undefined}
+                          >
+                            {item.name}
+                          </span>
+                        </Link>
+                      ))}
+                    </ClientOnly>
                   </div>
                 </div>
               </div>
               <div className="absolute inset-y-0 right-0 flex items-center content-between pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                 <div>
-                  <Web3Button />
+                  <ClientOnly>
+                    <Web3Button />
+                  </ClientOnly>
                 </div>
               </div>
             </div>
           </div>
-
           <Disclosure.Panel className="sm:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1">
               {navigation.map((item) => (
